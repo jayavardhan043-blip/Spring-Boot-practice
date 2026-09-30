@@ -1,4 +1,4 @@
-package com.example.springboot_masterclass;
+package com.example.springboot_masterclass.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
