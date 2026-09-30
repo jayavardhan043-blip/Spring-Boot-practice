@@ -1,4 +1,5 @@
-package com.example.springboot_masterclass;
+package com.example.springboot_masterclass.controller;
+
 
 import java.util.List;
 
@@ -10,6 +11,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.springboot_masterclass.dto.EmployeeRequestDTO;
+import com.example.springboot_masterclass.dto.EmployeeResponseDTO;
+import com.example.springboot_masterclass.service.EmployeeService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -23,20 +30,22 @@ public class EmployeeController {
 
     // GET ALL EMPLOYEES
     @GetMapping
-    public List<Employee> getAllEmployees() {
+    public List<EmployeeResponseDTO> getAllEmployees() {
         return employeeService.getAllEmployees();
     }
 
     // GET EMPLOYEE BY ID
     @GetMapping("/{id}")
-    public Employee getEmployee(@PathVariable int id) {
+    public EmployeeResponseDTO getEmployee(@PathVariable int id) {
         return employeeService.getEmployeeById(id);
     }
 
     // CREATE EMPLOYEE
     @PostMapping
-    public Employee createEmployee(@RequestBody Employee employee) {
-        return employeeService.createEmployee(employee);
+    public EmployeeResponseDTO createEmployee(
+            @Valid @RequestBody EmployeeRequestDTO employeeRequestDTO) {
+
+        return employeeService.createEmployee(employeeRequestDTO);
     }
 
     // DELETE EMPLOYEE
@@ -46,7 +55,7 @@ public class EmployeeController {
         boolean deleted = employeeService.deleteEmployee(id);
 
         if (deleted) {
-            return "Employee deleted";
+            return "Employee deleted successfully";
         }
 
         return "Employee not found";
@@ -54,10 +63,10 @@ public class EmployeeController {
 
     // UPDATE EMPLOYEE
     @PutMapping("/{id}")
-    public Employee updateEmployee(
+    public EmployeeResponseDTO updateEmployee(
             @PathVariable int id,
-            @RequestBody Employee employee) {
+            @Valid @RequestBody EmployeeRequestDTO employeeRequestDTO) {
 
-        return employeeService.updateEmployee(id, employee);
+        return employeeService.updateEmployee(id, employeeRequestDTO);
     }
 }
