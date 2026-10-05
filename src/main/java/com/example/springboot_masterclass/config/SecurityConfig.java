@@ -15,11 +15,13 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    // PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // TEMPORARY IN-MEMORY USERS
     @Bean
     public UserDetailsManager users(PasswordEncoder passwordEncoder) {
 
@@ -38,31 +40,49 @@ public class SecurityConfig {
         return new InMemoryUserDetailsManager(user, admin);
     }
 
+    // SECURITY CONFIGURATION
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
 
         http
+            // Disable CSRF for REST API practice
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
 
-                .requestMatchers(HttpMethod.GET, "/api/employees/**")
-                .hasAnyRole("USER", "ADMIN")
+                // Registration does not require authentication
+                .requestMatchers("/api/auth/register").permitAll()
 
-                .requestMatchers(HttpMethod.POST, "/api/employees")
-                .hasRole("ADMIN")
+                // USER + ADMIN can GET employees
+                .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/employees/**"
+                ).hasAnyRole("USER", "ADMIN")
 
-                .requestMatchers(HttpMethod.PUT, "/api/employees/**")
-                .hasRole("ADMIN")
+                // ADMIN only
+                .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/employees"
+                ).hasRole("ADMIN")
 
-                .requestMatchers(HttpMethod.DELETE, "/api/employees/**")
-                .hasRole("ADMIN")
+                // ADMIN only
+                .requestMatchers(
+                        HttpMethod.PUT,
+                        "/api/employees/**"
+                ).hasRole("ADMIN")
 
-                .anyRequest()
-                .authenticated()
+                // ADMIN only
+                .requestMatchers(
+                        HttpMethod.DELETE,
+                        "/api/employees/**"
+                ).hasRole("ADMIN")
+
+                // Everything else requires authentication
+                .anyRequest().authenticated()
             )
 
+            // Basic Authentication for now
             .httpBasic(customizer -> {});
 
         return http.build();
