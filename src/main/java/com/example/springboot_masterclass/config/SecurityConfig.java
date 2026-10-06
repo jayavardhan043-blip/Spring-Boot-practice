@@ -3,17 +3,27 @@ package com.example.springboot_masterclass.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.example.springboot_masterclass.security.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
+
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
+    }
 
     // PASSWORD ENCODER
     @Bean
@@ -21,69 +31,68 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // TEMPORARY IN-MEMORY USERS
+    // AUTHENTICATION MANAGER
     @Bean
-    public UserDetailsManager users(PasswordEncoder passwordEncoder) {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration)
+            throws Exception {
 
-        UserDetails user = User.builder()
-                .username("user")
-                .password(passwordEncoder.encode("user123"))
-                .roles("USER")
-                .build();
-
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .roles("ADMIN")
-                .build();
-
-        return new InMemoryUserDetailsManager(user, admin);
+        return configuration.getAuthenticationManager();
     }
 
     // SECURITY CONFIGURATION
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http)
             throws Exception {
 
         http
-            // Disable CSRF for REST API practice
+
+            // REST API
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
 
-                // Registration does not require authentication
-                .requestMatchers("/api/auth/register").permitAll()
+                // PUBLIC
+                .requestMatchers(
+                        "/api/auth/register",
+                        "/api/auth/login"
+                ).permitAll()
 
-                // USER + ADMIN can GET employees
+                // USER + ADMIN
                 .requestMatchers(
                         HttpMethod.GET,
                         "/api/employees/**"
                 ).hasAnyRole("USER", "ADMIN")
 
-                // ADMIN only
+                // ADMIN ONLY
                 .requestMatchers(
                         HttpMethod.POST,
                         "/api/employees"
                 ).hasRole("ADMIN")
 
-                // ADMIN only
+                // ADMIN ONLY
                 .requestMatchers(
                         HttpMethod.PUT,
                         "/api/employees/**"
                 ).hasRole("ADMIN")
 
-                // ADMIN only
+                // ADMIN ONLY
                 .requestMatchers(
                         HttpMethod.DELETE,
                         "/api/employees/**"
                 ).hasRole("ADMIN")
 
-                // Everything else requires authentication
-                .anyRequest().authenticated()
+                // Everything else
+                .anyRequest()
+                .authenticated()
             )
 
-            // Basic Authentication for now
-            .httpBasic(customizer -> {});
+            // JWT FILTER
+            .addFilterBefore(
+                    jwtAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.springboot_masterclass.dto.AuthRequestDTO;
+import com.example.springboot_masterclass.dto.LoginRequestDTO;
 import com.example.springboot_masterclass.service.AuthService;
 
 @RestController
@@ -19,8 +20,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody AuthRequestDTO request) {
+    public String register(
+            @RequestBody AuthRequestDTO request) {
 
         return authService.register(request);
+    }
+
+    @PostMapping("/login")
+    public String login(
+            @RequestBody LoginRequestDTO request) {
+
+        return authService.login(request);
     }
 }
